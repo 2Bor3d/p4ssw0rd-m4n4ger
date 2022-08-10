@@ -20,5 +20,4 @@ An easy-to-use console based password manager written in python. Please don't us
 - Close program: `exit`
 
 ### Additional info:
-Not all commits are in this repo because I accidentally committed a test version with real login data in save.json.
-
+Not all commits are in this repo because I accidentally committed a test version of save.json with real login data.

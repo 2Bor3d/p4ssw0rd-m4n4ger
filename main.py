@@ -70,6 +70,8 @@ def get_key(root):
 
 
 def get_args(raw_args):  # get arguments from string
+    if len(raw_args) == 0:
+        return []
     args = []
     last_space = 0
     for i in range(len(raw_args)):
@@ -78,6 +80,11 @@ def get_args(raw_args):  # get arguments from string
             last_space = i + 1  # set last space to current space
     args.append(raw_args[last_space:])  # add last argument
     return args  # return arguments
+
+
+def print_list(to_print):
+    for i in range(len(to_print)):
+        print(to_print[i])
 
 
 def print_help():
@@ -90,6 +97,16 @@ def print_help():
     print("exit - exit program")
     print("help - show help")
     print("----------")
+
+
+def generate_password(length=10, number=10, chars=string.ascii_letters + string.digits + string.punctuation):
+    password_list = []
+    for a in range(int(number)):
+        password = ""
+        for b in range(int(length)):
+            password = password + random.choice(chars)
+        password_list.append(password)
+    return password_list
 
 
 def add_password(file, fernet, site, username, password, path="save.json"):
@@ -166,7 +183,20 @@ def main(path="save.json"):
         if i.lower() == "help":
             print_help()
 
-        if i[:3].lower() == "add":
+        elif i[:8].lower() == "generate":
+            args = get_args(i[9:])
+            if len(args) == 0:
+                print_list(generate_password())
+            elif len(args) == 1:
+                print_list(generate_password(args[0]))
+            elif len(args) == 2:
+                print_list(generate_password(args[0], args[1]))
+            elif len(args) == 3:
+                print_list(generate_password(args[0], args[1], args[2]))
+            else:
+                print("Usage: generate <length=10> <number=10> <chars=string.letters+string.digits+string.punctuation>")
+
+        elif i[:3].lower() == "add":
             args = get_args(i[4:])  # get arguments
             try:
                 add_password(file, fernet, args[0], args[1], args[2], path)  # add password

@@ -83,8 +83,8 @@ def get_args(raw_args):  # get arguments from string
 def print_help():
     print("---Help---")
     print("add <site> <username> <password> - add password")
-    print("change <site> <password> - change password")
-    print("change <site> <username> - change username")
+    print("change_username <site> <username> - change username")
+    print("change_password <site> <password> - change password")
     print("list - list all passwords")
     print("delete <site> - delete password")
     print("exit - exit program")

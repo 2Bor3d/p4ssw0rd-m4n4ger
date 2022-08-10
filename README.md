@@ -5,16 +5,16 @@ A easy to use console based password manager written in python. Please don't use
 
 - First run: Run main.py with python 3. Set a root password (if you forget it you can't reset it and you have to reset the password manager). 
 
-- List all comands: help
+- List all commands: help
 
 - Add password: add <site> <username> <password>
 
-- Change password: change_password <site> <password>
-
 - Change username: change_username <site> <username>
+
+- Change password: change_password <site> <password>
 
 - List all passwords: list
 
 - Delete password: delete <site>
 
-- Close programm: exit
+- Close program: exit

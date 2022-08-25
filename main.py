@@ -1,4 +1,6 @@
 #!/usr/bin/python3.10
+# -*- coding: utf-8 -*-
+# compile with: pyinstaller --onefile main.py --add-data save.json:save
 import json
 import random
 import string
@@ -6,21 +8,42 @@ from cryptography.fernet import Fernet
 import hashlib
 from getpass import getpass
 import time
+import sys
+import os
 
 
 def get_json(path):
-    try:
-        with open(path, "r") as f:  # read json file
-            return json.loads(f.read())  # return json file
-    except FileNotFoundError:
-        raise FileNotFoundError(f"{path} not found")  # raise error if file not found
-
-
-def create_json(path):
-    with open(path, "x") as f:  # create json file
-        data = {"hash": "", "passwords": []}  # create empty json file
-        json.dump(data, f, ensure_ascii=False, indent=4)  # save json file
-    return get_json(path)  # return json file
+    if not getattr(sys, 'frozen', False):  # if not in executable
+        try:
+            with open(path, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            with open(path, "x") as f:
+                json.dump({"hash": "", "salt": "", "passwords": []}, f, indent=4)
+            return get_json(path)
+    else:  # if in executable
+        try:
+            '''
+            DESCRIPTION OF NEXT LINE:
+            
+            basically it opens save.json
+            
+            getattr(sys, '_MEIPASS', os.getcwd()) 
+            is a way to get the current working directory inside of the executable
+            
+            os.path.join() is a way to join two paths together
+            "save/save.json" is the path of the save file inside of the executable
+            
+            IMPORTANT:
+            BE CAREFUL WHEN CHANGING THIS LINE
+            '''
+            with open(os.path.join(os.path.join(getattr(sys, '_MEIPASS', os.getcwd()), "save/save.json")), "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print("Corrupted executable, please reinstall the application.")
+            print("If the problem persists, contact the developer.")
+            print("Exiting...")
+            sys.exit()
 
 
 def save_json(path, data):
@@ -30,8 +53,8 @@ def save_json(path, data):
 
 def create_salt(length=16, chars=string.ascii_letters + string.digits):
     salt = ""
-    for i in range(length):
-        salt = salt + random.choice(chars)
+    for i in range(length):  # for length of salt
+        salt = salt + random.choice(chars)  # add random char to salt
     return salt
 
 
@@ -101,81 +124,67 @@ def print_help():
 
 def generate_password(length=10, number=10, chars=string.ascii_letters + string.digits + string.punctuation):
     password_list = []
-    for a in range(int(number)):
+    for a in range(int(number)):  # for number of password options
         password = ""
-        for b in range(int(length)):
-            password = password + random.choice(chars)
-        password_list.append(password)
+        for b in range(int(length)):  # for length of password
+            password = password + random.choice(chars)  # add random char to password
+        password_list.append(password)  # add password to list
     return password_list
 
 
 def add_password(file, fernet, site, username, password, path="save.json"):
-    found = False
-    for i in range(len(file["passwords"])):
-        if file["passwords"][i]["site"].lower() == site.lower():
-            found = True
-    if found:
-        print("Site already exists.")
-    else:
-        encrypted_password = fernet.encrypt(password.encode()).decode()  # encrypt password
-        file["passwords"].append({"site": site, "username": username, "password": encrypted_password})  # save password
-        save_json(path, file)
-        print("Password added.")
+    for i in range(len(file["passwords"])):  # for all passwords
+        if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
+            print("Site already exists.")
+            return  # if site is found, stop function
+
+    encrypted_password = fernet.encrypt(password.encode()).decode()  # encrypt password
+    file["passwords"].append({"site": site, "username": username, "password": encrypted_password})  # save password
+    save_json(path, file)  # save json file
+    print("Password added.")
 
 
 def list_passwords(file, fernet):
     print("---Passwords---")
-    for i in range(len(file["passwords"])):
-        print(f"Site:     {file['passwords'][i]['site']}")
-        print(f"Username: {file['passwords'][i]['username']}")
-        print(f"Password: {fernet.decrypt(file['passwords'][i]['password'].encode()).decode()}")
+    for i in range(len(file["passwords"])):  # for all passwords
+        print(f"Site:     {file['passwords'][i]['site']}")  # print site
+        print(f"Username: {file['passwords'][i]['username']}")  # print username
+        print(f"Password: {fernet.decrypt(file['passwords'][i]['password'].encode()).decode()}")  # print password
         print("---------------")
 
 
 def change_password(file, fernet, site, password, path="save.json"):
-    found = False
-    for i in range(len(file["passwords"])):
-        if file["passwords"][i]["site"].lower() == site.lower():
-            file["passwords"][i]["password"] = fernet.encrypt(password.encode()).decode()
-            save_json(path, file)
-            found = True
-    if not found:
-        print("Site not found.")
-    else:
-        print("Password changed.")
+    for i in range(len(file["passwords"])):  # for all passwords
+        if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
+            file["passwords"][i]["password"] = fernet.encrypt(password.encode()).decode()  # change password
+            save_json(path, file)  # save json file
+            print("Password changed.")
+            return  # if site is found, stop function
+    print("Site not found.")
 
 
 def change_username(file, site, username, path="save.json"):
-    found = False
-    for i in range(len(file["passwords"])):
-        if file["passwords"][i]["site"].lower() == site.lower():
-            file["passwords"][i]["username"] = username
-            save_json(path, file)
-            found = True
-    if not found:
-        print("Site not found.")
-    else:
-        print("Username changed.")
+    for i in range(len(file["passwords"])):  # for all passwords
+        if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
+            file["passwords"][i]["username"] = username  # change username
+            save_json(path, file)  # save json file
+            print("Username changed.")
+            return  # if site is found, stop function
+    print("Site not found.")
 
 
 def delete_password(file, site, path="save.json"):
-    found = False
     for i in range(len(file["passwords"])):
         if file["passwords"][i]["site"].lower() == site.lower():
             file["passwords"].pop(i)
             save_json(path, file)
-            found = True
-    if not found:
-        print("Site not found.")
-    else:
-        print("Password deleted.")
+            print("Password deleted.")
+            return  # if site is found, stop function
+    print("Site not found.")
 
 
 def main(path="save.json"):
-    try:
-        file = get_json(path)  # get json file
-    except FileNotFoundError:
-        file = create_json(path)  # create json file if not exist
+    file = get_json(path)  # get json file
     root = authenticate(file, path)  # authenticate user
     fernet = Fernet(get_key(root).encode())  # create fernet object with key
     while True:
@@ -196,7 +205,7 @@ def main(path="save.json"):
             else:
                 print("Usage: generate <length=10> <number=10> <chars=string.letters+string.digits+string.punctuation>")
 
-        elif i[:3].lower() == "add":
+        elif i[:12].lower() == "add_password":
             args = get_args(i[4:])  # get arguments
             try:
                 add_password(file, fernet, args[0], args[1], args[2], path)  # add password

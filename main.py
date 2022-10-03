@@ -34,15 +34,14 @@ def get_json(path):
             os.path.join() is a way to join two paths together
             "save/save.json" is the path of the save file inside of the executable
             
-            IMPORTANT:
             BE CAREFUL WHEN CHANGING THIS LINE
             '''
             with open(os.path.join(os.path.join(getattr(sys, '_MEIPASS', os.getcwd()), "save/save.json")), "r") as f:
                 return json.load(f)
         except FileNotFoundError:
-            print("Corrupted executable, please reinstall the application.")
-            print("If the problem persists, contact the developer.")
-            print("Exiting...")
+            out("Corrupted executable, please reinstall the application.", 91)
+            out("If the problem persists, contact the developer.", 91)
+            out("Exiting...", 91)
             sys.exit()
 
 
@@ -71,7 +70,7 @@ def authenticate(file, path="save.json", chars=string.ascii_letters + string.dig
             root = getpass("Set root password:")  # get root password from user
             file["hash"], file["salt"] = create_root_password(root)  # get hash and salt
             save_json(path, file)  # save json file
-            print("Password created.")
+            out("Password created.", 92)
             return root
         else:
             root = getpass("Root password:")  # get root password from user
@@ -81,7 +80,7 @@ def authenticate(file, path="save.json", chars=string.ascii_letters + string.dig
                 h.update(salted_and_peppered.encode())  # hash salted and peppered string
                 if h.hexdigest() == file["hash"]:  # if hash is correct
                     return root
-            print("Wrong password, please try again.")
+            out("Wrong password, please try again.", 93)
             time.sleep(0.25)
 
 
@@ -107,19 +106,24 @@ def get_args(raw_args):  # get arguments from string
 
 def print_list(to_print):
     for i in range(len(to_print)):
-        print(to_print[i])
+        out(to_print[i], 94)
+
+
+def out(text, color=38):
+    print(f"\033[{color}m{text}\033[0m")
 
 
 def print_help():
-    print("---Help---")
-    print("add <site> <username> <password> - add password")
-    print("change_username <site> <username> - change username")
-    print("change_password <site> <password> - change password")
-    print("list - list all passwords")
-    print("delete <site> - delete password")
-    print("exit - exit program")
-    print("help - show help")
-    print("----------")
+    out("---Help---", 94)
+    out("generate [length] [number] - generate password", 94)
+    out("add <site> <username> <password> - add password", 94)
+    out("change_username <site> <username> - change username", 94)
+    out("change_password <site> <password> - change password", 94)
+    out("list - list all passwords", 94)
+    out("delete <site> - delete password", 94)
+    out("exit - exit program", 94)
+    out("help - show help", 94)
+    out("----------", 94)
 
 
 def generate_password(length=10, number=10, chars=string.ascii_letters + string.digits + string.punctuation):
@@ -135,22 +139,22 @@ def generate_password(length=10, number=10, chars=string.ascii_letters + string.
 def add_password(file, fernet, site, username, password, path="save.json"):
     for i in range(len(file["passwords"])):  # for all passwords
         if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
-            print("Site already exists.")
+            out("Site already exists.", 93)
             return  # if site is found, stop function
 
     encrypted_password = fernet.encrypt(password.encode()).decode()  # encrypt password
     file["passwords"].append({"site": site, "username": username, "password": encrypted_password})  # save password
     save_json(path, file)  # save json file
-    print("Password added.")
+    out("Password added.", 92)
 
 
 def list_passwords(file, fernet):
-    print("---Passwords---")
-    for i in range(len(file["passwords"])):  # for all passwords
-        print(f"Site:     {file['passwords'][i]['site']}")  # print site
-        print(f"Username: {file['passwords'][i]['username']}")  # print username
-        print(f"Password: {fernet.decrypt(file['passwords'][i]['password'].encode()).decode()}")  # print password
-        print("---------------")
+    out("---Passwords---", 94)
+    for i in range(len(file["passwords"])):
+        out(f"Site:     {file['passwords'][i]['site']}", 94)
+        out(f"Username: {file['passwords'][i]['username']}", 94)
+        out(f"Password: {fernet.decrypt(file['passwords'][i]['password'].encode()).decode()}", 94)
+        out("---------------", 94)
 
 
 def change_password(file, fernet, site, password, path="save.json"):
@@ -158,9 +162,9 @@ def change_password(file, fernet, site, password, path="save.json"):
         if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
             file["passwords"][i]["password"] = fernet.encrypt(password.encode()).decode()  # change password
             save_json(path, file)  # save json file
-            print("Password changed.")
+            out("Password changed.", 92)
             return  # if site is found, stop function
-    print("Site not found.")
+    out("Site not found.", 93)
 
 
 def change_username(file, site, username, path="save.json"):
@@ -168,9 +172,9 @@ def change_username(file, site, username, path="save.json"):
         if file["passwords"][i]["site"].lower() == site.lower():  # if site is found
             file["passwords"][i]["username"] = username  # change username
             save_json(path, file)  # save json file
-            print("Username changed.")
+            out("Username changed.", 92)
             return  # if site is found, stop function
-    print("Site not found.")
+    out("Site not found.", 93)
 
 
 def delete_password(file, site, path="save.json"):
@@ -178,9 +182,31 @@ def delete_password(file, site, path="save.json"):
         if file["passwords"][i]["site"].lower() == site.lower():
             file["passwords"].pop(i)
             save_json(path, file)
-            print("Password deleted.")
+            out("Password deleted.", 92)
             return  # if site is found, stop function
-    print("Site not found.")
+    out("Site not found.", 93)
+
+
+def arguments():
+    args = sys.argv[1:]
+    if "-h" in args or "--help" in args:
+        print_help()
+        exit()
+    if "-g" in args or "--generate" in args:
+        if "-g" in args:
+            index = args.index("-g")
+        else:
+            index = args.index("--generate")
+        if len(args) > index + 2 and args[index + 1].isdigit() and args[index + 2].isdigit():
+            print_list(generate_password(int(args[index + 1]), int(args[index + 2])))
+        else:
+            out("Please enter a length and number of passwords.", 93)
+    if "-e" in args or "--export" in args:
+        try:
+            file = open("export.json", "x")
+            json.dump(get_json("save.json"), file)
+        except FileExistsError:
+            out("File already exists.", 31)
 
 
 def main(path="save.json"):
@@ -203,14 +229,15 @@ def main(path="save.json"):
             elif len(args) == 3:
                 print_list(generate_password(args[0], args[1], args[2]))
             else:
-                print("Usage: generate <length=10> <number=10> <chars=string.letters+string.digits+string.punctuation>")
+                out("Usage: generate <length=10> <number=10> <chars=string.letters+string.digits+string.punctuation>",
+                    93)
 
         elif i[:12].lower() == "add_password":
             args = get_args(i[4:])  # get arguments
             try:
                 add_password(file, fernet, args[0], args[1], args[2], path)  # add password
             except IndexError:
-                print("Usage: add_password <site> <username> <password>")
+                out("Usage: add_password <site> <username> <password>", 93)
 
         elif i.lower() == "list":
             list_passwords(file, fernet)
@@ -220,31 +247,34 @@ def main(path="save.json"):
             try:
                 change_password(file, fernet, args[0], args[1], path)  # change password
             except IndexError:
-                print("Usage: change_password <site> <password>")
+                out("Usage: change_password <site> <password>", 93)
 
         elif i[:15].lower() == "change_username":
             args = get_args(i[16:])
             try:
                 change_username(file, args[0], args[1], path)
             except IndexError:
-                print("Usage: change_username <site> <username>")
+                out("Usage: change_username <site> <username>", 93)
 
         elif i[:6].lower() == "delete":
             args = get_args(i[7:])
             try:
                 delete_password(file, args[0], path)
             except IndexError:
-                print("Usage: delete_password <site>")
+                out("Usage: delete_password <site>", 93)
 
         elif i.lower() == "exit" or i.lower() == "quit":
             exit()
 
         else:
-            print("Type 'help' for help.")
+            out("Type 'help' for help.", 93)
 
 
 if __name__ == "__main__":
     try:
-        main()
+        if sys.argv == 1:
+            main()
+        else:
+            arguments()
     except KeyboardInterrupt:
         exit()
